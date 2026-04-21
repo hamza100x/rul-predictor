@@ -1,0 +1,25 @@
+# Data (download manually from Kaggle)
+data/raw/
+data/processed/
+
+# Models
+models/*.pt
+models/*.pkl
+
+# MLflow
+mlruns/
+mlflow_tracking/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
