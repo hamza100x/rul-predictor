@@ -1,0 +1,2 @@
+# Optional dependencies (may vary by Python version/platform)
+mlflow>=2.13

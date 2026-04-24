@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +27,14 @@ PROCESSED_DIR = ROOT / "data" / "processed"
 
 DEFAULT_RF_MODEL = MODELS_DIR / "rf_baseline.pkl"
 DEFAULT_FEATURE_COLS = MODELS_DIR / "rf_feature_columns.txt"
+
+
+def _resolve_path(path_value: str) -> Path:
+    """Resolve user-provided path relative to project root when needed."""
+    path = Path(path_value)
+    if path.is_absolute():
+        return path
+    return (ROOT / path).resolve()
 
 
 class PredictionRequest(BaseModel):
@@ -73,15 +81,31 @@ def get_metrics() -> dict[str, Any]:
 @app.post("/predict", response_model=PredictionResponse)
 def predict(request: PredictionRequest) -> PredictionResponse:
     """Make RUL predictions on test data."""
-    model_path = request.model_path or str(DEFAULT_RF_MODEL)
-    feature_cols_path = request.feature_cols_path or str(DEFAULT_FEATURE_COLS)
+    model_path = _resolve_path(request.model_path or str(DEFAULT_RF_MODEL))
+    data_path = _resolve_path(request.data_path)
+    feature_cols_path = _resolve_path(request.feature_cols_path or str(DEFAULT_FEATURE_COLS))
 
-    if not Path(model_path).exists():
-        raise FileNotFoundError(f"Model not found: {model_path}")
-    if not Path(request.data_path).exists():
-        raise FileNotFoundError(f"Data not found: {request.data_path}")
+    if not model_path.exists():
+        raise HTTPException(status_code=404, detail=f"Model not found: {model_path}")
+    if not data_path.exists():
+        raise HTTPException(status_code=404, detail=f"Data not found: {data_path}")
 
-    pred_df = predict_rul(model_path, request.data_path, feature_cols_path)
+    try:
+        pred_df = predict_rul(str(model_path), str(data_path), str(feature_cols_path))
+    except ImportError as exc:
+        # Most commonly triggered when parquet engines are missing in the active environment.
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Missing parquet dependency in the API runtime environment. "
+                "Install 'pyarrow' (or 'fastparquet') in the same environment used to run uvicorn."
+            ),
+        ) from exc
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing expected feature column: {exc}",
+        ) from exc
     predictions = pred_df.to_dict("records")
 
     return PredictionResponse(

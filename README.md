@@ -68,6 +68,9 @@ source .venv/bin/activate  # on Windows: .venv\Scripts\Activate.ps1
 # Install dependencies
 pip install -r requirements.txt
 
+# Optional extras (MLflow and related tooling)
+pip install -r requirements-optional.txt
+
 # Run the pipeline
 jupyter notebook notebooks/
 # Execute in order: 01_eda → 02_feature_engineering → 03_baseline_rf → 04_lstm
@@ -75,8 +78,16 @@ jupyter notebook notebooks/
 
 ### API Server
 ```bash
-# Start FastAPI development server
-uvicorn api.main:app --reload --port 8000
+# Start FastAPI development server using the project venv interpreter
+# Windows (PowerShell)
+.venv\Scripts\python -m uvicorn api.main:app --reload --port 8000
+
+# macOS/Linux
+.venv/bin/python -m uvicorn api.main:app --reload --port 8000
+
+# Optional: confirm you are using the project environment
+# Windows: .venv\Scripts\python -m pip show fastapi uvicorn pydantic pyarrow
+# macOS/Linux: .venv/bin/python -m pip show fastapi uvicorn pydantic pyarrow
 
 # Visit http://localhost:8000/docs for interactive API docs
 # GET  /health        - Health check and available models
