@@ -121,6 +121,17 @@ python src/predict.py \
   --output predictions.csv
 ```
 
+### Testing
+```bash
+# Install test dependency
+.venv\Scripts\python -m pip install pytest
+
+# Run API smoke tests
+.venv\Scripts\python -m pytest -q tests/test_api.py
+```
+
+Continuous Integration runs the same API tests on every push and pull request via [.github/workflows/ci.yml](.github/workflows/ci.yml).
+
 ## Tech Stack
 
 PyTorch · scikit-learn · MLflow · FastAPI · Docker · HuggingFace · Gradio
