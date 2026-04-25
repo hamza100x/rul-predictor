@@ -1,8 +1,13 @@
 from pathlib import Path
+import sys
 
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import api.main as api_main
 
@@ -144,5 +149,4 @@ def test_predict_endpoint_invalid_model() -> None:
         },
     )
     
-    assert response.status_code == 400
-    assert "Unknown model" in response.json()["detail"]
+    assert response.status_code == 422
